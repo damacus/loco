@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  original_scheduler:
+  fixed_scheduler:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -19,21 +19,25 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: e5edc69afa0df1501e0ba0c1f02a02eb35cd873b
+          ref: 5224bc58f9292a2f4713ee333bded785e5266f09
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
         with:
           toolchain: "1.98"
+          components: rustfmt, clippy
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           shared-key: native-scheduler-verification
-      - name: Observe the original scheduler fail the regression
-        run: |
-          set +e
-          cargo test -p loco-rs --lib scheduler::tests::native_task_preserves_arguments_on_start_and_later_ticks -- --exact > "$RUNNER_TEMP/scheduler-red.log" 2>&1
-          result=$?
-          set -e
-          cat "$RUNNER_TEMP/scheduler-red.log"
-          test "$result" -eq 101
-          grep -F "native scheduler did not invoke its executable on startup and a later tick" "$RUNNER_TEMP/scheduler-red.log"
-          grep -F "0 passed; 1 failed" "$RUNNER_TEMP/scheduler-red.log"
+          cache-on-failure: true
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run scheduler coverage
+        run: cargo test -p loco-rs --lib scheduler::tests
+      - name: Run upstream workspace tests
+        run: cargo test --all-features --workspace --exclude loco-gen --exclude loco
+      - name: Run upstream strict Clippy
+        run: cargo clippy --workspace --all-features -- -D warnings -W clippy::pedantic -W clippy::nursery -W rust-2018-idioms
+      - name: Check documentation links
+        run: cargo doc --no-deps --all-features --workspace
+        env:
+          RUSTDOCFLAGS: -D rustdoc::broken_intra_doc_links -D rustdoc::invalid_html_tags -D rustdoc::bare_urls
