@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 105964d15d03c7c8dc8991688e97a7ea9dfd8980
+          ref: 6f0b2a838ed6132d911bbfd1692c9273fe1dfc22
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
         with:
@@ -28,6 +28,7 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           shared-key: native-scheduler-verification
+          cache-on-failure: true
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Run scheduler coverage
