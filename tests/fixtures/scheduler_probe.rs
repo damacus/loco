@@ -3,6 +3,9 @@ use std::{env, fs::OpenOptions, io::Write};
 fn main() {
     let arguments: Vec<_> = env::args().skip(1).collect();
     assert_eq!(arguments[0], "task");
+    if arguments.get(1).is_some_and(|argument| argument == "fail") {
+        std::process::exit(37);
+    }
     assert_eq!(arguments[1], "foo");
     let mut output = OpenOptions::new()
         .create(true)
@@ -17,4 +20,6 @@ fn main() {
         env::var_os("PATH").is_some()
     )
     .unwrap();
+    println!("synthetic scheduler stdout");
+    eprintln!("synthetic scheduler stderr");
 }
